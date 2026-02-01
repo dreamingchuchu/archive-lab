@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>ARCHIVE LAB - FULL INTEGRATION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root { --filter-bg: transparent; --stroke-opacity: 0.15; --accent: #fff; }
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #0b0e13; font-family: 'Noto Sans SC', sans-serif; cursor: none; color: #fff; }
+        
+        /* 涂白遮罩系统 */
+        .white-wash-target { position: relative; overflow: hidden; }
+        .white-wash-mask { 
+            position: absolute; left: 0; bottom: 0; width: 100%; height: 0%; 
+            background: #fff; z-index: 20; pointer-events: none; 
+        }
+
+        /* 拖曳区域 */
+        #drop-zone { 
+            position: fixed; inset: 0; z-index: 3000; 
+            background: rgba(255,255,255,0.1); 
+            border: 5px dashed var(--accent); 
+            display: none; align-items: center; justify-content: center; 
+            pointer-events: none; backdrop-filter: blur(20px);
+        }
+        #drop-zone.active { display: flex; }
+        #drop-zone h1 { font-size: 5vw; font-weight: 900; color: #fff; text-shadow: 0 0 20px rgba(0,0,0,0.5); }
+
+        .bg-text { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18vw; font-weight: 900; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,var(--stroke-opacity)); z-index: 1; white-space: nowrap; text-transform: uppercase; user-select: none; pointer-events: none; transition: 0.5s; }
+
+        #canvas-container { position: fixed; inset: 0; z-index: 50; }
+        #theme-overlay { position: fixed; inset: 0; z-index: 100; pointer-events: none; transition: 0.8s; mix-blend-mode: screen; background-color: var(--filter-bg); }
+
+        .header-info { position: fixed; top: 60px; left: 60px; z-index: 500; display: flex; flex-direction: column; gap: 20px; }
+        .header-main { font-size: 32px; font-weight: 900; margin: 0; outline: none; transition: 0.3s; width: fit-content; }
+        .status-panel { font-size: 10px; font-family: monospace; color: rgba(255,255,255,0.4); border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px; width: fit-content; }
+
+        .menu-viewport { position: fixed; right: calc(8vw + 1em); top: 50%; transform: translateY(-50%); height: 500px; width: 45vw; overflow: hidden; z-index: 500; pointer-events: none; }
+        .ui-menu { position: absolute; width: 100%; top: 50%; display: flex; flex-direction: column; align-items: flex-end; will-change: transform; }
+        
+        .menu-item { 
+            position: relative; font-size: 3.5vw; font-weight: 900; line-height: 1.2; text-align: right; 
+            opacity: 0.15; transition: 0.6s; pointer-events: auto; cursor: pointer; padding: 10px 0; outline: none;
+            color: #fff; width: fit-content;
+        }
+        .menu-item:hover { 
+            opacity: 1; color: transparent; -webkit-text-stroke: 1px #fff; 
+            animation: soft-wave 2.5s infinite ease-in-out;
+        }
+        @keyframes soft-wave {
+            0%, 100% { transform: scale(1); filter: blur(0); }
+            50% { transform: scale(1.02, 0.98); filter: blur(0.5px); }
+        }
+        .menu-item.active-scroll { opacity: 1; }
+        
+        #custom-cursor { position: fixed; top: 0; left: 0; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 9999; mix-blend-mode: difference; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s; }
+
+        .dot-switcher { position: fixed; bottom: 60px; left: 60px; z-index: 502; display: flex; gap: 15px; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.1); transition: 0.3s; }
+
+        .toggle-panel { position: fixed; bottom: 40px; right: 40px; z-index: 600; font-size: 10px; cursor: pointer; border: 1px solid #333; padding: 10px 20px; background: #000; transition: 0.3s; }
+        .toggle-panel.active { background: #fff; color: #000; border-color: #fff; }
+
+        .submit-panel { position: fixed; bottom: 100px; right: 40px; z-index: 600; background: #111; padding: 25px; display: flex; flex-direction: column; gap: 12px; width: 280px; border: 1px solid #333; transform: translateY(160%); transition: 0.5s; border-top: 4px solid var(--accent); }
+        .submit-panel.active { transform: translateY(0); }
+        .submit-panel input, .submit-panel textarea { background:#000; border:1px solid #333; color:#fff; padding:10px; font-family: inherit; font-size: 12px; outline: none; }
+        .submit-panel button { padding:12px; background:var(--accent); color: #000; font-weight:900; border:none; cursor:pointer; font-size: 11px; }
+        
+        #detail-view { position: fixed; inset: 0; z-index: 1000; background: #0b0e13; display: none; opacity: 0; }
+        .detail-content { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; padding: 0 10vw; align-items: center; gap: 80px; }
+        .scroll-driver { position: absolute; inset: 0; overflow-y: auto; z-index: 400; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+
+<div id="drop-zone"><h1>DROP IMAGE TO INJECT</h1></div>
+<div class="bg-text" id="bg-txt">LABORATORY</div>
+<div id="theme-overlay"></div>
+<div id="custom-cursor"></div>
+
+<div class="header-info">
+    <div class="white-wash-target">
+        <h1 class="header-main interactive" id="lab-name">视觉档案室</h1>
+        <div class="white-wash-mask"></div>
+    </div>
+    <div class="white-wash-target">
+        <div class="status-panel">
+            <div><span class="interactive" id="coord-label">COORD:</span> <span id="status-coord">0.0000</span></div>
+            <div id="status-time">TIME: --:--:--</div>
+            <div id="sys-status" class="interactive" style="margin-top:5px; opacity:0.5">SYST // ACTIVE</div>
+        </div>
+        <div class="white-wash-mask"></div>
+    </div>
+</div>
+
+<div class="dot-switcher">
+    <div class="dot" style="background: #ffffff;" onclick="setFilter('none', 'transparent', 0.15, '#ffffff')"></div>
+    <div class="dot" style="background: #ff0044;" onclick="setFilter('contrast(1.2)', 'rgba(255, 0, 68, 0.15)', 0.3, '#ff0044')"></div>
+    <div class="dot" style="background: #0077ff;" onclick="setFilter('brightness(1.1)', 'rgba(0, 119, 255, 0.15)', 0.2, '#0077ff')"></div>
+    <div class="dot" style="background: #00ffaa;" onclick="setFilter('none', 'rgba(0, 255, 170, 0.12)', 0.18, '#00ffaa')"></div>
+    <div class="dot" style="background: #ffcc00;" onclick="setFilter('contrast(1.1)', 'rgba(255, 204, 0, 0.12)', 0.2, '#ffcc00')"></div>
+    <div class="dot" style="background: #9900ff;" onclick="setFilter('hue-rotate(45deg)', 'rgba(153, 0, 255, 0.12)', 0.2, '#9900ff')"></div>
+    <div class="dot" style="background: #ff6600;" onclick="setFilter('saturate(1.5)', 'rgba(255, 102, 0, 0.12)', 0.2, '#ff6600')"></div>
+</div>
+
+<div class="toggle-panel" id="edit-toggle" onclick="toggleEditMode()">/ ACCESS EDITOR</div>
+
+<div class="submit-panel" id="s-panel">
+    <input type="text" id="in-bg-text" placeholder="修改背景文字..." oninput="updateBgLive(this.value)">
+    <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
+    <input type="text" id="in-title" placeholder="档案标题">
+    <textarea id="in-body" placeholder="内容..."></textarea>
+    <input type="text" id="in-img" placeholder="图片 URL (或拖曳文件)">
+    <button onclick="submitNewArticle()">注入数据流</button>
+</div>
+
+<div id="detail-view">
+    <button class="interactive" style="position:fixed; top:40px; right:40px; background:none; border:1px solid #fff; color:#fff; padding:10px 25px; cursor:pointer; z-index:1100;" onclick="closeDetail()">BACK</button>
+    <div class="detail-content">
+        <div class="detail-text">
+            <h2 id="detail-title" style="font-size:4vw; margin:0;"></h2>
+            <p id="detail-body" style="margin-top:20px; line-height:2; opacity:0.6; font-size:14px;"></p>
+        </div>
+        <img id="detail-img" src="" style="width:100%; height:60vh; object-fit:cover;">
+    </div>
+</div>
+
+<div id="canvas-container"></div>
+<div class="scroll-driver" id="driver"><div id="scroll-spacer" style="height: 300000px;"></div></div>
+<div class="menu-viewport"><div class="ui-menu" id="menu"></div></div>
+
+<script>
+    const defaultData = {
+        articles: [
+            { title: "钛金重构", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1000", body: "本地拖曳图片可快速注入档案。" },
+            { title: "极光矩阵", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000", body: "光影序列的极致律动。" }
+        ],
+        labName: "视觉档案室", bgTxt: "LABORATORY", coordLabel: "COORD:", sysStatus: "SYST // ACTIVE"
+    };
+
+    let articles, scene, camera, renderer, raycaster, cards = [], isEditing = false, mouse = new THREE.Vector2();
+    let currentScroll = 0, lerpScroll = 0;
+    const cursor = document.getElementById('custom-cursor');
+
+    function loadSavedData() {
+        const saved = localStorage.getItem('ARCHIVE_LAB_V5');
+        let data = saved ? JSON.parse(saved) : defaultData;
+        articles = data.articles;
+        document.getElementById('lab-name').innerText = data.labName;
+        document.getElementById('bg-txt').innerText = data.bgTxt;
+        document.getElementById('in-bg-text').value = data.bgTxt;
+        document.getElementById('coord-label').innerText = data.coordLabel;
+        document.getElementById('sys-status').innerText = data.sysStatus;
+    }
+
+    function saveToLocal() {
+        const data = {
+            articles,
+            labName: document.getElementById('lab-name').innerText,
+            bgTxt: document.getElementById('bg-txt').innerText,
+            coordLabel: document.getElementById('coord-label').innerText,
+            sysStatus: document.getElementById('sys-status').innerText
+        };
+        localStorage.setItem('ARCHIVE_LAB_V5', JSON.stringify(data));
+    }
+
+    // 拖曳上传逻辑
+    function initDragDrop() {
+        const zone = document.getElementById('drop-zone');
+        
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zone.classList.add('active');
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            if (e.relatedTarget === null) zone.classList.remove('active');
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('active');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64Img = event.target.result;
+                    // 自动开启编辑面板并填入数据
+                    if(!isEditing) toggleEditMode();
+                    document.getElementById('in-img').value = base64Img;
+                    document.getElementById('in-title').value = files[0].name.split('.')[0].toUpperCase();
+                    // 提示用户
+                    cursor.style.background = "#00ffaa";
+                    setTimeout(() => cursor.style.background = "var(--accent)", 1000);
+                };
+                reader.readAsDataURL(files[0]);
+            }
+        });
+    }
+
+    function updateBgLive(v) { document.getElementById('bg-txt').innerText = v; saveToLocal(); }
+
+    function setFilter(f, color, sOpacity, accent) { 
+        document.body.style.setProperty('--filter-bg', color);
+        document.body.style.setProperty('--stroke-opacity', sOpacity);
+        document.body.style.setProperty('--accent', accent);
+        document.getElementById('theme-overlay').style.backdropFilter = f;
+    }
+
+    function toggleEditMode() {
+        isEditing = !isEditing;
+        document.body.classList.toggle('is-editing', isEditing);
+        document.getElementById('edit-toggle').classList.toggle('active', isEditing);
+        document.getElementById('s-panel').classList.toggle('active', isEditing);
+        document.querySelectorAll('.header-info .interactive').forEach(el => el.contentEditable = isEditing);
+        if (!isEditing) saveToLocal();
+        document.getElementById('edit-toggle').innerText = isEditing ? "/ LOCK & SAVE" : "/ ACCESS EDITOR";
+    }
+
+    function submitNewArticle() {
+        const title = document.getElementById('in-title').value || "NEW DATA";
+        const body = document.getElementById('in-body').value || "Description...";
+        const img = document.getElementById('in-img').value;
+        if(!img) { alert("请提供图片 URL 或拖入本地图片"); return; }
+        articles.push({ title, body, img });
+        refreshGallery(); saveToLocal();
+        document.getElementById('in-title').value = ''; document.getElementById('in-body').value = ''; document.getElementById('in-img').value = '';
+    }
+
+    function openDetail(art) {
+        const masks = document.querySelectorAll('.white-wash-mask');
+        gsap.to(masks, {
+            height: "100%", duration: 0.5, ease: "power2.inOut", stagger: 0.05,
+            onComplete: () => {
+                document.getElementById('detail-title').innerText = art.title;
+                document.getElementById('detail-body').innerText = art.body;
+                document.getElementById('detail-img').src = art.img;
+                document.getElementById('detail-view').style.display = 'block';
+                gsap.to("#detail-view", { opacity: 1, duration: 0.4 });
+            }
+        });
+    }
+
+    function closeDetail() {
+        const masks = document.querySelectorAll('.white-wash-mask');
+        gsap.to("#detail-view", {
+            opacity: 0, duration: 0.3,
+            onComplete: () => {
+                document.getElementById('detail-view').style.display = 'none';
+                gsap.to(masks, {
+                    height: "0%", top: "100%", duration: 0.6, ease: "expo.out",
+                    onComplete: () => { gsap.set(masks, { top: "auto", bottom: 0 }); }
+                });
+            }
+        });
+    }
+
+    function createUIItem(art, index) {
+        const div = document.createElement('div');
+        div.className = 'menu-item white-wash-target';
+        div.innerHTML = `<span>${art.title}</span><div class="white-wash-mask"></div>`;
+        div.onclick = () => { if(!isEditing) openDetail(art); };
+        document.getElementById('menu').appendChild(div);
+
+        const mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(32, 20),
+            new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load(art.img), transparent: true, opacity: 0, side: THREE.DoubleSide })
+        );
+        mesh.userData = art;
+        scene.add(mesh);
+        cards.push({ mesh, div });
+    }
+
+    function refreshGallery() {
+        cards.forEach(c => scene.remove(c.mesh));
+        document.getElementById('menu').innerHTML = '';
+        cards = [];
+        articles.forEach((art, i) => createUIItem(art, i));
+    }
+
+    function init() {
+        loadSavedData();
+        initDragDrop();
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 90;
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        scene.add(new THREE.AmbientLight(0xffffff, 2.5));
+        raycaster = new THREE.Raycaster();
+        refreshGallery();
+
+        window.addEventListener('mousemove', e => {
+            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        window.addEventListener('click', (e) => {
+            if(isEditing || e.target.closest('.menu-item, .dot, button, .toggle-panel, .header-main')) return;
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(cards.map(c => c.mesh));
+            if(hits.length > 0) openDetail(hits[0].object.userData);
+        });
+
+        document.getElementById('driver').addEventListener('scroll', e => { currentScroll = e.target.scrollTop; });
+        animate();
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        lerpScroll = THREE.MathUtils.lerp(lerpScroll, currentScroll, 0.1);
+        const total = articles.length;
+        if (total === 0) return;
+        const progress = (lerpScroll / 1500) % total;
+        
+        document.getElementById('menu').style.transform = `translateY(${-(progress * 5.2)}vw)`;
+        document.getElementById('status-coord').innerText = progress.toFixed(4);
+        document.getElementById('status-time').innerText = `TIME: ${new Date().toLocaleTimeString()}`;
+
+        let isOverUI = document.querySelectorAll('.menu-item:hover, .dot:hover, button:hover, .header-main:hover').length > 0;
+        gsap.to(cursor, { width: isOverUI ? 60 : 14, height: isOverUI ? 60 : 14, duration: 0.3 });
+
+        cards.forEach((card, i) => {
+            let diff = i - progress;
+            if (diff > total / 2) diff -= total;
+            if (diff < -total / 2) diff += total;
+            const isActive = Math.abs(diff) < 0.5;
+            card.div.classList.toggle('active-scroll', isActive);
+            let basePos = new THREE.Vector3(-24 + diff * 50, -diff * 12, -Math.abs(diff) * 45);
+            if (isActive && mouse.x < 0) {
+                basePos.lerp(new THREE.Vector3(mouse.x * 35, mouse.y * 20, 15), 0.15);
+            }
+            card.mesh.position.lerp(basePos, 0.1);
+            card.mesh.material.opacity = THREE.MathUtils.lerp(card.mesh.material.opacity, isActive ? 1 : 0.05, 0.1);
+            card.mesh.rotation.y = THREE.MathUtils.lerp(card.mesh.rotation.y, -diff * 0.4, 0.1);
+        });
+        renderer.render(scene, camera);
+    }
+
+    init();
+</script>
+</body>
+</html>
