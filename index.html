@@ -51,12 +51,12 @@
         .scroll-driver { position: absolute; inset: 0; overflow-y: auto; z-index: 400; scrollbar-width: none; }
     </style>
 <style type="text/css">.eye-read > b {font-weight: bold !important;}</style></head>
-<body>
+<body style="--filter-bg: rgba(153, 0, 255, 0.12); --stroke-opacity: 0.2; --accent: #9900ff;">
 
 <div id="drop-zone"><h1>DROP TO INJECT</h1></div>
 <div class="bg-text" id="bg-txt">LABORATORY</div>
-<div id="theme-overlay"></div>
-<div id="custom-cursor" style="translate: none; rotate: none; scale: none; transform: translate(-50%, -50%) translate(1333px, 684px);"></div>
+<div id="theme-overlay" style="backdrop-filter: hue-rotate(45deg);"></div>
+<div id="custom-cursor" style="translate: none; rotate: none; scale: none; transform: translate(-50%, -50%) translate(1368px, 687px);"></div>
 
 <div class="header-info">
     <div class="white-wash-target">
@@ -65,8 +65,8 @@
     </div>
     <div class="white-wash-target">
         <div class="status-panel">
-            <div><span class="interactive" id="coord-label" contenteditable="true">COORD:</span> <span id="status-coord">0.5525</span></div>
-            <div id="status-time">TIME: 23:32:34</div>
+            <div><span class="interactive" id="coord-label" contenteditable="true">COORD:</span> <span id="status-coord">0.0000</span></div>
+            <div id="status-time">TIME: 23:42:09</div>
             <div id="sys-status" class="interactive" style="margin-top:5px; opacity:0.5" contenteditable="true">SYST // ACTIVE</div>
         </div>
         <div class="white-wash-mask" style="height: 0%; top: auto; bottom: 0px;"></div>
@@ -110,7 +110,7 @@
 
 <div id="canvas-container"><canvas width="1528" height="828" style="display: block; width: 1528px; height: 828px;"></canvas></div>
 <div class="scroll-driver" id="driver"><div id="scroll-spacer" style="height: 300000px;"></div></div>
-<div class="menu-viewport"><div class="ui-menu" id="menu" style="transform: translateY(-2.87317vw);"><div class="menu-item-container"><div class="admin-btn-group"><span class="admin-icon" onclick="editItem(0)">✎</span><span class="admin-icon" onclick="deleteItem(0)" style="color:#ff4444">✕</span></div><div class="menu-item white-wash-target active-scroll" onclick="if(!isEditing) openDetail(articles[0])"><span>旧留言板入口</span><div class="white-wash-mask" style="height: 0%; top: auto; bottom: 0px;"></div></div></div></div></div>
+<div class="menu-viewport"><div class="ui-menu" id="menu" style="transform: translateY(0vw);"><div class="menu-item-container"><div class="admin-btn-group"><span class="admin-icon" onclick="editItem(0)">✎</span><span class="admin-icon" onclick="deleteItem(0)" style="color:#ff4444">✕</span></div><div class="menu-item white-wash-target active-scroll" onclick="if(!isEditing) openDetail(articles[0])"><span>旧留言板入口</span><div class="white-wash-mask" style="height: 0%; top: auto; bottom: 0px;"></div></div></div></div></div>
 
 <script>
     // --- 【关键修改】锁定为您截图中的旧留言板数据 ---
