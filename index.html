@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>ARCHIVE LAB - RECOVERED</title>
+    <title>ARCHIVE LAB - FULL SOUL</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -10,52 +10,68 @@
         :root { --filter-bg: transparent; --stroke-opacity: 0.15; --accent: #fff; }
         body, html { margin: 0; padding: 0; overflow: hidden; background: #0b0e13; font-family: 'Noto Sans SC', sans-serif; cursor: none; color: #fff; }
         
-        /* 鼠标指针：Difference 反色效果 */
+        /* 1. 鼠标与反色层级 */
         #custom-cursor { position: fixed; top: 0; left: 0; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 9999; mix-blend-mode: difference; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background-color 0.3s; }
-        .cursor-hover { width: 45px !important; height: 45px !important; }
+        .cursor-hover { width: 50px !important; height: 50px !important; }
 
-        .bg-text { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18vw; font-weight: 900; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,var(--stroke-opacity)); z-index: 1; white-space: nowrap; text-transform: uppercase; user-select: none; pointer-events: none; transition: 0.5s; }
+        /* 2. 背景与遮罩动画 */
+        .white-wash-target { position: relative; overflow: hidden; display: inline-block; }
+        .white-wash-mask { position: absolute; left: 0; bottom: 0; width: 100%; height: 0%; background: #fff; z-index: 20; pointer-events: none; }
+        
+        .bg-text { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18vw; font-weight: 900; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,var(--stroke-opacity)); z-index: 1; white-space: nowrap; text-transform: uppercase; user-select: none; pointer-events: none; transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
         #theme-overlay { position: fixed; inset: 0; z-index: 100; pointer-events: none; transition: 0.8s; mix-blend-mode: screen; background-color: var(--filter-bg); }
 
-        /* 小圆点交互区 */
-        .dot-switcher { position: fixed; bottom: 60px; left: 60px; z-index: 2000; display: flex; gap: 15px; pointer-events: auto; }
-        .dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        /* 3. 头部信息与坐标 */
+        .header-info { position: fixed; top: 60px; left: 60px; z-index: 500; display: flex; flex-direction: column; gap: 20px; }
+        .header-main { font-size: 32px; font-weight: 900; margin: 0; outline: none; }
+        .status-panel { font-size: 10px; font-family: monospace; color: rgba(255,255,255,0.4); border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px; }
 
-        .header-info { position: fixed; top: 60px; left: 60px; z-index: 500; pointer-events: none; }
-        .header-main { font-size: 32px; font-weight: 900; margin: 0; pointer-events: auto; }
-
+        /* 4. 列表与导航 */
         .menu-viewport { position: fixed; right: calc(8vw + 1em); top: 50%; transform: translateY(-50%); height: 500px; width: 45vw; overflow: hidden; z-index: 500; pointer-events: none; }
         .ui-menu { position: absolute; width: 100%; top: 50%; display: flex; flex-direction: column; align-items: flex-end; will-change: transform; }
-        .menu-item-container { display: flex; align-items: center; gap: 15px; pointer-events: auto; }
-        .menu-item { font-size: 3.5vw; font-weight: 900; line-height: 1.2; text-align: right; opacity: 0.15; transition: 0.6s; cursor: pointer; color: #fff; }
+        .menu-item-container { display: flex; align-items: center; gap: 15px; pointer-events: auto; margin: 0.5em 0; }
+        .menu-item { position: relative; font-size: 3.5vw; font-weight: 900; line-height: 1.2; text-align: right; opacity: 0.15; transition: 0.6s; cursor: pointer; color: #fff; white-space: nowrap; }
         .menu-item:hover { opacity: 1; color: transparent; -webkit-text-stroke: 1px #fff; }
         .menu-item.active-scroll { opacity: 1; }
 
-        /* 详情页 & 评论区 */
+        /* 5. 小圆点交互区 */
+        .dot-switcher { position: fixed; bottom: 60px; left: 60px; z-index: 2000; display: flex; gap: 15px; pointer-events: auto; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        .dot:hover { transform: scale(1.3); border-color: #fff; }
+
+        /* 6. 详情页与 Giscus */
         #detail-view { position: fixed; inset: 0; z-index: 3000; background: #0b0e13; display: none; opacity: 0; overflow-y: auto; scrollbar-width: none; }
-        .detail-content { display: grid; grid-template-columns: 1fr 1.2fr; min-height: 100vh; padding: 100px 8vw; align-items: start; gap: 60px; }
-        #giscus-container { margin-top: 60px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; min-height: 400px; }
-        .detail-img-container { position: sticky; top: 100px; height: 70vh; overflow: hidden; }
+        .detail-content { display: grid; grid-template-columns: 1fr 1.2fr; min-height: 100vh; padding: 120px 8vw; align-items: start; gap: 80px; }
+        .detail-text h2 { font-size: 4vw; font-weight: 900; margin-bottom: 30px; letter-spacing: -2px; }
+        #giscus-container { margin-top: 80px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; min-height: 400px; }
+        .detail-img-container { position: sticky; top: 120px; height: 75vh; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
         #detail-img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* 管理面板 */
+        /* 7. 管理员面板与拖拽 */
         #admin-controls { display: none; }
-        .toggle-panel { position: fixed; bottom: 40px; right: 40px; z-index: 600; font-size: 10px; cursor: pointer; border: 1px solid #333; padding: 10px 20px; background: #000; }
-        .submit-panel { position: fixed; bottom: 100px; right: 40px; z-index: 600; background: #111; padding: 25px; display: flex; flex-direction: column; gap: 12px; width: 280px; border: 1px solid #333; transform: translateY(160%); transition: 0.5s; border-top: 4px solid var(--accent); }
+        #drop-zone { position: fixed; inset: 0; z-index: 5000; background: rgba(255,255,255,0.1); border: 5px dashed var(--accent); display: none; align-items: center; justify-content: center; backdrop-filter: blur(20px); pointer-events: none; }
+        #drop-zone.active { display: flex; }
+        .submit-panel { position: fixed; bottom: 80px; right: 40px; z-index: 600; background: #111; padding: 30px; display: flex; flex-direction: column; gap: 15px; width: 300px; border: 1px solid #333; transform: translateY(150%); transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1); border-top: 5px solid var(--accent); }
         .submit-panel.active { transform: translateY(0); }
-        .submit-panel input, .submit-panel textarea { background:#000; border:1px solid #333; color:#fff; padding:10px; font-size: 12px; }
+        .submit-panel input, .submit-panel textarea { background:#000; border:1px solid #333; color:#fff; padding:12px; font-size: 12px; outline: none; }
     </style>
 </head>
 <body>
 
 <div id="custom-cursor"></div>
+<div id="drop-zone"><h1>DROP TO INJECT</h1></div>
 <div class="bg-text" id="bg-txt">LABORATORY</div>
 <div id="theme-overlay"></div>
 
 <div class="header-info">
-    <h1 class="header-main" id="lab-name">视觉档案室</h1>
-    <div style="font-size:10px; opacity:0.4; margin-top:10px; font-family:monospace; border-left:1px solid #333; padding-left:10px;">
-        COORD: <span id="status-coord">0.0000</span>
+    <div class="white-wash-target">
+        <h1 class="header-main interactive" id="lab-name">视觉档案室</h1>
+        <div class="white-wash-mask"></div>
+    </div>
+    <div class="status-panel white-wash-target">
+        <div>COORD: <span id="status-coord">0.0000</span></div>
+        <div id="status-time">TIME: --:--:--</div>
+        <div class="white-wash-mask"></div>
     </div>
 </div>
 
@@ -65,28 +81,26 @@
     <div class="dot" style="background: #0077ff;" onclick="setFilter('brightness(1.1)', 'rgba(0, 119, 255, 0.15)', 0.2, '#0077ff')"></div>
     <div class="dot" style="background: #00ffaa;" onclick="setFilter('none', 'rgba(0, 255, 170, 0.12)', 0.18, '#00ffaa')"></div>
     <div class="dot" style="background: #ffcc00;" onclick="setFilter('contrast(1.1)', 'rgba(255, 204, 0, 0.12)', 0.2, '#ffcc00')"></div>
-    <div class="dot" style="background: #9900ff;" onclick="setFilter('hue-rotate(45deg)', 'rgba(153, 0, 255, 0.12)', 0.2, '#9900ff')"></div>
-    <div class="dot" style="background: #ff6600;" onclick="setFilter('saturate(1.5)', 'rgba(255, 102, 0, 0.12)', 0.2, '#ff6600')"></div>
 </div>
 
 <div id="admin-controls">
-    <div class="toggle-panel" onclick="toggleEditMode()">/ ACCESS EDITOR</div>
+    <div style="position:fixed; bottom:30px; right:40px; z-index:601; font-size:10px; cursor:pointer; background:#000; padding:10px 20px; border:1px solid #333" onclick="toggleEditMode()">/ ACCESS EDITOR</div>
     <div class="submit-panel" id="s-panel">
         <input type="text" id="in-bg-text" placeholder="背景文字..." oninput="updateBgLive(this.value)">
         <input type="text" id="in-title" placeholder="档案标题">
-        <textarea id="in-body" placeholder="详情描述..."></textarea>
-        <input type="text" id="in-img" placeholder="图片 URL">
-        <button onclick="submitNewArticle()" style="background:var(--accent); color:#000; padding:10px; border:none; cursor:pointer; font-weight:900;">注入</button>
-        <button onclick="exportNewHTML()" style="background:#fff; margin-top:5px; padding:10px; border:none; cursor:pointer;">导出代码</button>
+        <textarea id="in-body" rows="4" placeholder="详情描述..."></textarea>
+        <input type="text" id="in-img" placeholder="图片 URL (或拖入文件)">
+        <button onclick="submitNewArticle()" style="background:var(--accent); color:#000; padding:12px; border:none; cursor:pointer; font-weight:900;">注入数据流</button>
+        <button onclick="exportNewHTML()" style="background:#fff; margin-top:5px; padding:8px; border:none; cursor:pointer; font-size:10px;">导出生产环境代码</button>
     </div>
 </div>
 
 <div id="detail-view">
-    <button style="position:fixed; top:40px; right:40px; background:none; border:1px solid #fff; color:#fff; padding:10px 25px; cursor:pointer; z-index:4000;" onclick="closeDetail()">BACK</button>
+    <button style="position:fixed; top:40px; right:40px; background:none; border:1px solid #fff; color:#fff; padding:10px 25px; cursor:pointer; z-index:4000; font-weight:900;" onclick="closeDetail()">BACK</button>
     <div class="detail-content">
         <div class="detail-text">
-            <h2 id="detail-title"></h2>
-            <p id="detail-body"></p>
+            <div class="white-wash-target"><h2 id="detail-title"></h2><div class="white-wash-mask"></div></div>
+            <p id="detail-body" style="opacity:0.7; line-height:1.8; margin-top:20px;"></p>
             <div id="giscus-container"></div>
         </div>
         <div class="detail-img-container"><img id="detail-img" src=""></div>
@@ -98,39 +112,33 @@
 <div class="menu-viewport"><div class="ui-menu" id="menu"></div></div>
 
 <script>
-    // --- 【修正后的 Giscus 配置】 ---
     const GISCUS_CONFIG = {
         "src": "https://giscus.app/client.js",
         "data-repo": "dreamingchuchu/dreamingchuchu.github.io",
         "data-repo-id": "R_kgDOQddrMw",
         "data-category": "General",
         "data-category-id": "DIC_kwDOQddrM84CzESd",
-        "data-mapping": "specific",  // 必须用 specific 锁定旧路径
-        "data-term": "message/",      // 锁定 message/ 路径
-        "data-reactions-enabled": "1",
-        "data-emit-metadata": "0",
-        "data-input-position": "bottom",
+        "data-mapping": "specific",
+        "data-term": "message/",
         "data-theme": "transparent_dark",
         "data-lang": "zh-CN",
         "crossorigin": "anonymous"
     };
 
     const defaultData = {
-        articles: [{ title: "欢迎访问档案室", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1000", body: "点击作品进入详情页查看旧留言。" }],
+        articles: [{ title: "欢迎归档", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1000", body: "视觉档案室系统已上线。所有交互已找回：白洗遮罩、拖拽注入、反色指针。" }],
         labName: "视觉档案室", bgTxt: "LABORATORY"
     };
 
     let articles, scene, camera, renderer, cards = [], isEditing = false, mouse = new THREE.Vector2();
     let currentScroll = 0, lerpScroll = 0;
-
     const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
 
     function init() {
-        // 物理删除非管理员面板 [cite: 2026-02-01]
         if (!isAdmin) { document.getElementById('admin-controls')?.remove(); } 
-        else { document.getElementById('admin-controls').style.display = 'block'; }
+        else { document.getElementById('admin-controls').style.display = 'block'; initDragDrop(); }
 
-        const saved = localStorage.getItem('ARCHIVE_LAB_V12');
+        const saved = localStorage.getItem('ARCHIVE_LAB_SOUL_V1');
         const data = (isAdmin && saved) ? JSON.parse(saved) : defaultData;
         articles = data.articles;
         document.getElementById('lab-name').innerText = data.labName;
@@ -146,6 +154,7 @@
         refreshGallery();
         setupEvents();
         animate();
+        triggerWhiteWash();
     }
 
     function setupEvents() {
@@ -153,12 +162,14 @@
             gsap.to("#custom-cursor", { x: e.clientX, y: e.clientY, duration: 0.1 });
             mouse.x = (e.clientX/window.innerWidth)*2-1;
             mouse.y = -(e.clientY/window.innerHeight)*2+1;
-            
-            // 碰到任何交互元素变大并保持 Difference [cite: 2025-12-31]
-            const isHover = e.target.closest('.dot, .menu-item, button, .header-main');
+            const isHover = e.target.closest('.dot, .menu-item, button, .header-main, .interactive');
             document.getElementById('custom-cursor').classList.toggle('cursor-hover', !!isHover);
         });
         document.getElementById('driver').addEventListener('scroll', e => { currentScroll = e.target.scrollTop; });
+    }
+
+    function triggerWhiteWash() {
+        gsap.fromTo(".white-wash-mask", { height: "100%", top: 0 }, { height: "0%", top: "100%", duration: 0.8, stagger: 0.1, ease: "power4.inOut" });
     }
 
     function setFilter(f, color, sOpacity, accent) {
@@ -166,6 +177,7 @@
         document.body.style.setProperty('--stroke-opacity', sOpacity);
         document.body.style.setProperty('--accent', accent);
         document.getElementById('theme-overlay').style.backdropFilter = f;
+        gsap.to("#bg-txt", { webkitTextStroke: `1px rgba(255,255,255,${sOpacity})`, duration: 0.5 });
     }
 
     function loadGiscus() {
@@ -174,37 +186,62 @@
         const script = document.createElement('script');
         script.src = GISCUS_CONFIG.src;
         for (let key in GISCUS_CONFIG) { if(key !== "src") script.setAttribute(key, GISCUS_CONFIG[key]); }
-        script.setAttribute("crossorigin", "anonymous");
-        script.async = true;
-        container.appendChild(script);
+        script.async = true; container.appendChild(script);
     }
 
     function openDetail(art) {
-        document.getElementById('detail-title').innerText = art.title;
-        document.getElementById('detail-body').innerText = art.body;
-        document.getElementById('detail-img').src = art.img;
-        document.getElementById('detail-view').style.display = 'block';
-        gsap.to("#detail-view", { opacity: 1, duration: 0.4, onComplete: loadGiscus });
+        gsap.to(".white-wash-mask", { height: "100%", top: 0, duration: 0.4, onComplete: () => {
+            document.getElementById('detail-title').innerText = art.title;
+            document.getElementById('detail-body').innerText = art.body;
+            document.getElementById('detail-img').src = art.img;
+            document.getElementById('detail-view').style.display = 'block';
+            gsap.to("#detail-view", { opacity: 1, duration: 0.4, onComplete: () => {
+                loadGiscus();
+                triggerWhiteWash();
+            }});
+        }});
     }
 
     function closeDetail() {
-        gsap.to("#detail-view", { opacity: 0, duration: 0.3, onComplete: () => { document.getElementById('detail-view').style.display = 'none'; }});
+        gsap.to("#detail-view", { opacity: 0, duration: 0.3, onComplete: () => {
+            document.getElementById('detail-view').style.display = 'none';
+            triggerWhiteWash();
+        }});
     }
 
     function createUIItem(art, index) {
         const container = document.createElement('div');
         container.className = 'menu-item-container';
-        container.innerHTML = `<div class="menu-item" onclick="openDetail(articles[${index}])">${art.title}</div>`;
+        container.innerHTML = `<div class="menu-item white-wash-target" onclick="openDetail(articles[${index}])">${art.title}<div class="white-wash-mask"></div></div>`;
         document.getElementById('menu').appendChild(container);
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(32, 20), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load(art.img), transparent: true, opacity: 0 }));
         scene.add(mesh); cards.push({ mesh, div: container.querySelector('.menu-item') });
     }
 
-    function refreshGallery() { cards.forEach(c => scene.remove(c.mesh)); document.getElementById('menu').innerHTML = ''; cards = []; articles.forEach((art, i) => createUIItem(art, i)); }
+    function initDragDrop() {
+        const zone = document.getElementById('drop-zone');
+        window.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('active'); });
+        window.addEventListener('dragleave', () => zone.classList.remove('active'));
+        window.addEventListener('drop', e => {
+            e.preventDefault(); zone.classList.remove('active');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('in-img').value = ev.target.result;
+                    document.getElementById('in-title').value = file.name.split('.')[0].toUpperCase();
+                    if(!isEditing) toggleEditMode();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    function refreshGallery() { cards.forEach(c => scene.remove(c.mesh)); document.getElementById('menu').innerHTML = ''; cards = []; articles.forEach((art, i) => createUIItem(art, i)); triggerWhiteWash(); }
     function toggleEditMode() { isEditing = !isEditing; document.getElementById('s-panel').classList.toggle('active', isEditing); }
     function updateBgLive(v) { document.getElementById('bg-txt').innerText = v; }
-    function submitNewArticle() { articles.push({ title: document.getElementById('in-title').value, body: document.getElementById('in-body').value, img: document.getElementById('in-img').value }); refreshGallery(); saveToLocal(); }
-    function saveToLocal() { if (isAdmin) localStorage.setItem('ARCHIVE_LAB_V12', JSON.stringify({ articles, labName: document.getElementById('lab-name').innerText, bgTxt: document.getElementById('bg-txt').innerText })); }
+    function submitNewArticle() { articles.push({ title: document.getElementById('in-title').value || "UNTITLED", body: document.getElementById('in-body').value || "", img: document.getElementById('in-img').value }); refreshGallery(); saveToLocal(); }
+    function saveToLocal() { if (isAdmin) localStorage.setItem('ARCHIVE_LAB_SOUL_V1', JSON.stringify({ articles, labName: document.getElementById('lab-name').innerText, bgTxt: document.getElementById('bg-txt').innerText })); }
     function exportNewHTML() { let html = document.documentElement.outerHTML; const data = { articles, labName: document.getElementById('lab-name').innerText, bgTxt: document.getElementById('bg-txt').innerText }; html = html.replace(/const defaultData = \{[\s\S]*?\};/, `const defaultData = ${JSON.stringify(data, null, 8)};`); const blob = new Blob([html], { type: 'text/html' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click(); }
 
     function animate() {
@@ -214,6 +251,8 @@
         const progress = (lerpScroll / 1500) % total;
         document.getElementById('menu').style.transform = `translateY(${-(progress * 5.2)}vw)`;
         document.getElementById('status-coord').innerText = progress.toFixed(4);
+        document.getElementById('status-time').innerText = `TIME: ${new Date().toLocaleTimeString()}`;
+        
         cards.forEach((card, i) => {
             let diff = i - progress;
             if (diff > total/2) diff -= total; if (diff < -total/2) diff += total;
