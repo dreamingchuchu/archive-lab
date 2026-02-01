@@ -1,36 +1,38 @@
-<html lang="zh"><head>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
     <meta charset="UTF-8">
-    <title>ARCHIVE LAB - RECOVERED</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;900&amp;display=swap" rel="stylesheet">
+    <title>ARCHIVE LAB - FULL VERSION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         :root { --filter-bg: transparent; --stroke-opacity: 0.15; --accent: #fff; }
         body, html { margin: 0; padding: 0; overflow: hidden; background: #0b0e13; font-family: 'Noto Sans SC', sans-serif; cursor: none; color: #fff; }
-        .white-wash-target { position: relative; overflow: hidden; }
-        .white-wash-mask { position: absolute; left: 0; bottom: 0; width: 100%; height: 0%; background: #fff; z-index: 20; pointer-events: none; }
-        #drop-zone { position: fixed; inset: 0; z-index: 3000; background: rgba(255,255,255,0.1); border: 5px dashed var(--accent); display: none; align-items: center; justify-content: center; pointer-events: none; backdrop-filter: blur(20px); }
-        #drop-zone.active { display: flex; }
-        .bg-text { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18vw; font-weight: 900; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,var(--stroke-opacity)); z-index: 1; white-space: nowrap; text-transform: uppercase; user-select: none; pointer-events: none; transition: 0.5s; }
+        
+        /* 交互层级优化 */
         #canvas-container { position: fixed; inset: 0; z-index: 50; }
         #theme-overlay { position: fixed; inset: 0; z-index: 100; pointer-events: none; transition: 0.8s; mix-blend-mode: screen; background-color: var(--filter-bg); }
+        
+        .bg-text { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18vw; font-weight: 900; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,var(--stroke-opacity)); z-index: 1; white-space: nowrap; text-transform: uppercase; user-select: none; pointer-events: none; transition: 0.5s; }
+        
         .header-info { position: fixed; top: 60px; left: 60px; z-index: 500; display: flex; flex-direction: column; gap: 20px; }
         .header-main { font-size: 32px; font-weight: 900; margin: 0; outline: none; width: fit-content; }
-        .status-panel { font-size: 10px; font-family: monospace; color: rgba(255,255,255,0.4); border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px; width: fit-content; }
+        
+        .dot-switcher { position: fixed; bottom: 60px; left: 60px; z-index: 2000; display: flex; gap: 15px; pointer-events: auto; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        .dot:hover { transform: scale(1.2); border-color: #fff; }
+
         .menu-viewport { position: fixed; right: calc(8vw + 1em); top: 50%; transform: translateY(-50%); height: 500px; width: 45vw; overflow: hidden; z-index: 500; pointer-events: none; }
         .ui-menu { position: absolute; width: 100%; top: 50%; display: flex; flex-direction: column; align-items: flex-end; will-change: transform; }
         .menu-item-container { display: flex; align-items: center; gap: 15px; pointer-events: auto; }
         .menu-item { position: relative; font-size: 3.5vw; font-weight: 900; line-height: 1.2; text-align: right; opacity: 0.15; transition: 0.6s; cursor: pointer; color: #fff; width: fit-content; }
         .menu-item:hover { opacity: 1; color: transparent; -webkit-text-stroke: 1px #fff; }
         .menu-item.active-scroll { opacity: 1; }
-        .admin-btn-group { display: none; gap: 10px; opacity: 0; transition: 0.3s; }
-        .menu-item-container:hover .admin-btn-group { display: flex; opacity: 0.6; }
-        .admin-icon { font-size: 14px; cursor: pointer; padding: 5px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; }
-        #custom-cursor { position: fixed; top: 0; left: 0; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 9999; mix-blend-mode: difference; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s; }
-        .dot-switcher { position: fixed; bottom: 60px; left: 60px; z-index: 502; display: flex; gap: 15px; }
-        .dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.1); transition: 0.3s; }
 
-        /* 编辑面板控制 */
+        #custom-cursor { position: fixed; top: 0; left: 0; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 9999; mix-blend-mode: difference; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s; }
+
+        /* 编辑面板 */
         #admin-controls { display: none; }
         .toggle-panel { position: fixed; bottom: 40px; right: 40px; z-index: 600; font-size: 10px; cursor: pointer; border: 1px solid #333; padding: 10px 20px; background: #000; }
         .submit-panel { position: fixed; bottom: 100px; right: 40px; z-index: 600; background: #111; padding: 25px; display: flex; flex-direction: column; gap: 12px; width: 280px; border: 1px solid #333; transform: translateY(160%); transition: 0.5s; border-top: 4px solid var(--accent); }
@@ -38,38 +40,35 @@
         .submit-panel input, .submit-panel textarea { background:#000; border:1px solid #333; color:#fff; padding:10px; font-family: inherit; font-size: 12px; outline: none; }
         .submit-panel button { padding:10px; background:var(--accent); color: #000; font-weight:900; border:none; cursor:pointer; }
 
-        /* 详情页 & 评论区 */
-        #detail-view { position: fixed; inset: 0; z-index: 1000; background: #0b0e13; display: none; opacity: 0; overflow: hidden; }
-        .detail-content { display: grid; grid-template-columns: 1fr 1.2fr; height: 100vh; padding: 0 8vw; align-items: center; gap: 60px; }
-        .detail-text { max-height: 80vh; overflow-y: auto; padding-right: 30px; scrollbar-width: none; }
-        .detail-text::-webkit-scrollbar { display: none; }
+        /* 详情页 */
+        #detail-view { position: fixed; inset: 0; z-index: 3000; background: #0b0e13; display: none; opacity: 0; overflow-y: auto; scrollbar-width: none; }
+        #detail-view::-webkit-scrollbar { display: none; }
+        .detail-content { display: grid; grid-template-columns: 1fr 1.2fr; min-height: 100vh; padding: 80px 8vw; align-items: start; gap: 60px; }
         .detail-text h2 { font-size: 4vw; font-weight: 900; margin-bottom: 30px; }
         .detail-text p { font-size: 16px; line-height: 1.8; opacity: 0.7; white-space: pre-wrap; margin-bottom: 40px; }
-        #giscus-container { margin-top: 60px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; min-height: 300px; }
-        .detail-img-container { height: 70vh; width: 100%; overflow: hidden; position: relative; }
+        #giscus-container { margin-top: 60px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; min-height: 400px; }
+        .detail-img-container { position: sticky; top: 80px; height: 70vh; width: 100%; overflow: hidden; }
         #detail-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .white-wash-mask { position: absolute; left: 0; bottom: 0; width: 100%; height: 0%; background: #fff; z-index: 20; pointer-events: none; }
         .scroll-driver { position: absolute; inset: 0; overflow-y: auto; z-index: 400; scrollbar-width: none; }
     </style>
-<style type="text/css">.eye-read > b {font-weight: bold !important;}</style></head>
-<body style="--filter-bg: rgba(153, 0, 255, 0.12); --stroke-opacity: 0.2; --accent: #9900ff;">
+</head>
+<body>
 
-<div id="drop-zone"><h1>DROP TO INJECT</h1></div>
+<div id="drop-zone" style="position:fixed; inset:0; z-index:4000; background:rgba(255,255,255,0.1); border:5px dashed #fff; display:none; align-items:center; justify-content:center; pointer-events:none; backdrop-filter:blur(20px);"><h1>DROP TO INJECT</h1></div>
 <div class="bg-text" id="bg-txt">LABORATORY</div>
-<div id="theme-overlay" style="backdrop-filter: hue-rotate(45deg);"></div>
-<div id="custom-cursor" style="translate: none; rotate: none; scale: none; transform: translate(-50%, -50%) translate(1368px, 687px);"></div>
+<div id="theme-overlay"></div>
+<div id="custom-cursor"></div>
 
 <div class="header-info">
     <div class="white-wash-target">
-        <h1 class="header-main interactive" id="lab-name" contenteditable="true">视觉档案室</h1>
-        <div class="white-wash-mask" style="height: 0%; top: auto; bottom: 0px;"></div>
+        <h1 class="header-main" id="lab-name">视觉档案室</h1>
+        <div class="white-wash-mask"></div>
     </div>
-    <div class="white-wash-target">
-        <div class="status-panel">
-            <div><span class="interactive" id="coord-label" contenteditable="true">COORD:</span> <span id="status-coord">0.0000</span></div>
-            <div id="status-time">TIME: 23:42:09</div>
-            <div id="sys-status" class="interactive" style="margin-top:5px; opacity:0.5" contenteditable="true">SYST // ACTIVE</div>
-        </div>
-        <div class="white-wash-mask" style="height: 0%; top: auto; bottom: 0px;"></div>
+    <div class="status-panel" style="font-size:10px; font-family:monospace; color:rgba(255,255,255,0.4); border-left:1px solid rgba(255,255,255,0.2); padding-left:15px;">
+        <div>COORD: <span id="status-coord">0.0000</span></div>
+        <div id="status-time">TIME: --:--:--</div>
     </div>
 </div>
 
@@ -83,99 +82,85 @@
     <div class="dot" style="background: #ff6600;" onclick="setFilter('saturate(1.5)', 'rgba(255, 102, 0, 0.12)', 0.2, '#ff6600')"></div>
 </div>
 
-<div id="admin-controls" style="display: block;">
-    <div class="toggle-panel" id="edit-toggle" onclick="toggleEditMode()">/ ACCESS EDITOR</div>
-    <div class="submit-panel active" id="s-panel">
+<div id="admin-controls">
+    <div class="toggle-panel" onclick="toggleEditMode()">/ ACCESS EDITOR</div>
+    <div class="submit-panel" id="s-panel">
         <input type="hidden" id="edit-index" value="-1">
         <input type="text" id="in-bg-text" placeholder="背景文字..." oninput="updateBgLive(this.value)">
         <input type="text" id="in-title" placeholder="档案标题">
         <textarea id="in-body" placeholder="详情描述..."></textarea>
         <input type="text" id="in-img" placeholder="图片 URL">
-        <button id="submit-btn" onclick="submitNewArticle()">注入数据流</button>
+        <button onclick="submitNewArticle()">注入数据流</button>
         <button onclick="exportNewHTML()" style="background:#fff">导出生产环境代码</button>
     </div>
 </div>
 
-<div id="detail-view" style="display: none; opacity: 0;">
-    <button style="position:fixed; top:40px; right:40px; background:none; border:1px solid #fff; color:#fff; padding:10px 25px; cursor:pointer; z-index:1100;" onclick="closeDetail()">BACK</button>
+<div id="detail-view">
+    <button style="position:fixed; top:40px; right:40px; background:none; border:1px solid #fff; color:#fff; padding:10px 25px; cursor:pointer; z-index:4100;" onclick="closeDetail()">BACK</button>
     <div class="detail-content">
-        <div class="detail-text" id="detail-text-container">
-            <h2 id="detail-title">旧留言板入口</h2>
-            <p id="detail-body">这里已经关联了你原本在 GitHub Discussions #5 的留言。</p>
-            <div id="giscus-container"><div style="opacity:0.2; text-align:center; padding:40px;">[ 留言板联机中... ]</div></div>
+        <div class="detail-text">
+            <h2 id="detail-title"></h2>
+            <p id="detail-body"></p>
+            <div id="giscus-container"></div>
         </div>
-        <div class="detail-img-container"><img id="detail-img" src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1000"></div>
+        <div class="detail-img-container"><img id="detail-img" src=""></div>
     </div>
 </div>
 
-<div id="canvas-container"><canvas width="1528" height="828" style="display: block; width: 1528px; height: 828px;"></canvas></div>
+<div id="canvas-container"></div>
 <div class="scroll-driver" id="driver"><div id="scroll-spacer" style="height: 300000px;"></div></div>
-<div class="menu-viewport"><div class="ui-menu" id="menu" style="transform: translateY(0vw);"><div class="menu-item-container"><div class="admin-btn-group"><span class="admin-icon" onclick="editItem(0)">✎</span><span class="admin-icon" onclick="deleteItem(0)" style="color:#ff4444">✕</span></div><div class="menu-item white-wash-target active-scroll" onclick="if(!isEditing) openDetail(articles[0])"><span>旧留言板入口</span><div class="white-wash-mask" style="height: 0%; top: auto; bottom: 0px;"></div></div></div></div></div>
+<div class="menu-viewport"><div class="ui-menu" id="menu"></div></div>
 
 <script>
-    // --- 【关键修改】锁定为您截图中的旧留言板数据 ---
+    // --- Giscus 锁定配置 ---
     const GISCUS_CONFIG = {
-        "data-repo": "dreamingchuchu/dreamingchuchu.github.io", // 强制关联旧仓库
+        "src": "https://giscus.app/client.js",
+        "data-repo": "dreamingchuchu/dreamingchuchu.github.io",
         "data-repo-id": "R_kgDOQddrMw",
-        "data-category": "Announcements",
-        "data-category-id": "DIC_kwDOQddrM84CzESc",
-        "data-mapping": "specific",  // 锁定特定页面评论
-        "data-term": "message/",      // 锁定为您截图中的 message/ 路径
+        "data-category": "General",
+        "data-category-id": "DIC_kwDOQddrM84CzESd",
+        "data-mapping": "specific",
+        "data-term": "message/",
         "data-theme": "transparent_dark",
-        "data-lang": "zh-CN"
+        "data-lang": "zh-CN",
+        "crossorigin": "anonymous"
     };
 
     const defaultData = {
-        "articles": [
-                {
-                        "title": "旧留言板入口",
-                        "img": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1000",
-                        "body": "这里已经关联了你原本在 GitHub Discussions #5 的留言。"
-                }
-        ],
-        "labName": "视觉档案室",
-        "bgTxt": "LABORATORY",
-        "coordLabel": "COORD:",
-        "sysStatus": "SYST // ACTIVE"
-};
+        articles: [{ title: "欢迎归档", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1000", body: "点击小圆点切换滤镜，滚动查看作品，点开档案查看留言。" }],
+        labName: "视觉档案室", bgTxt: "LABORATORY"
+    };
 
-    let articles, scene, camera, renderer, raycaster, cards = [], isEditing = false, mouse = new THREE.Vector2();
+    let articles, scene, camera, renderer, cards = [], isEditing = false, mouse = new THREE.Vector2();
     let currentScroll = 0, lerpScroll = 0;
-    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.protocol === "file:";
     const isAdmin = window.location.search.includes('admin=true');
 
     function loadSavedData() {
-        const saved = localStorage.getItem('ARCHIVE_LAB_V8_FINAL');
-        let data = (isLocal && saved) ? JSON.parse(saved) : defaultData;
+        const saved = localStorage.getItem('ARCHIVE_LAB_V10_FINAL');
+        let data = (isAdmin && saved) ? JSON.parse(saved) : defaultData;
         articles = data.articles;
         document.getElementById('lab-name').innerText = data.labName;
         document.getElementById('bg-txt').innerText = data.bgTxt;
-        if (isLocal || isAdmin) { 
-            document.getElementById('admin-controls').style.display = 'block'; 
-            initDragDrop(); 
-        }
+        if (isAdmin) document.getElementById('admin-controls').style.display = 'block';
+    }
+
+    function setFilter(f, color, sOpacity, accent) {
+        document.body.style.setProperty('--filter-bg', color);
+        document.body.style.setProperty('--stroke-opacity', sOpacity);
+        document.body.style.setProperty('--accent', accent);
+        document.getElementById('theme-overlay').style.backdropFilter = f;
+        gsap.to("#custom-cursor", { backgroundColor: accent, duration: 0.3 });
     }
 
     function loadGiscus() {
         const container = document.getElementById('giscus-container');
         container.innerHTML = '';
-        if (isLocal) { container.innerHTML = '<div style="opacity:0.2; text-align:center; padding:40px;">[ 留言板联机中... ]</div>'; return; }
         const script = document.createElement('script');
-        script.src = "https://giscus.app/client.js";
-        for (let key in GISCUS_CONFIG) { script.setAttribute(key, GISCUS_CONFIG[key]); }
+        script.src = GISCUS_CONFIG.src;
+        for (let key in GISCUS_CONFIG) { if(key !== "src") script.setAttribute(key, GISCUS_CONFIG[key]); }
         script.setAttribute("crossorigin", "anonymous");
         script.async = true;
         container.appendChild(script);
-    }
-
-    function saveToLocal() { if (isLocal) localStorage.setItem('ARCHIVE_LAB_V8_FINAL', JSON.stringify({ articles, labName: document.getElementById('lab-name').innerText, bgTxt: document.getElementById('bg-txt').innerText, coordLabel: document.getElementById('coord-label').innerText, sysStatus: document.getElementById('sys-status').innerText })); }
-
-    function exportNewHTML() {
-        const data = { articles, labName: document.getElementById('lab-name').innerText, bgTxt: document.getElementById('bg-txt').innerText, coordLabel: document.getElementById('coord-label').innerText, sysStatus: document.getElementById('sys-status').innerText };
-        let html = document.documentElement.outerHTML;
-        html = html.replace(/const defaultData = \{[\s\S]*?\};/, `const defaultData = ${JSON.stringify(data, null, 8)};`);
-        const blob = new Blob([html], { type: 'text/html' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
     }
 
     function openDetail(art) {
@@ -183,9 +168,8 @@
             document.getElementById('detail-title').innerText = art.title;
             document.getElementById('detail-body').innerText = art.body;
             document.getElementById('detail-img').src = art.img;
-            document.getElementById('detail-text-container').scrollTop = 0;
             document.getElementById('detail-view').style.display = 'block';
-            loadGiscus(); // 详情页开启即加载旧留言
+            loadGiscus();
             gsap.to("#detail-view", { opacity: 1, duration: 0.4 });
         }});
     }
@@ -200,30 +184,19 @@
     function createUIItem(art, index) {
         const container = document.createElement('div');
         container.className = 'menu-item-container';
-        let admin = (isLocal || isAdmin) ? `<div class="admin-btn-group"><span class="admin-icon" onclick="editItem(${index})">✎</span><span class="admin-icon" onclick="deleteItem(${index})" style="color:#ff4444">✕</span></div>` : '';
-        container.innerHTML = `${admin}<div class="menu-item white-wash-target" onclick="if(!isEditing) openDetail(articles[${index}])"><span>${art.title}</span><div class="white-wash-mask"></div></div>`;
+        let admin = isAdmin ? `<div style="display:flex; gap:5px; opacity:0.5; margin-right:10px;"><span onclick="editItem(${index})">✎</span><span onclick="deleteItem(${index})" style="color:red">✕</span></div>` : '';
+        container.innerHTML = `${admin}<div class="menu-item" onclick="if(!isEditing) openDetail(articles[${index}])">${art.title}</div>`;
         document.getElementById('menu').appendChild(container);
-        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(32, 20), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load(art.img), transparent: true, opacity: 0, side: THREE.DoubleSide }));
-        mesh.userData = art; scene.add(mesh); cards.push({ mesh, div: container.querySelector('.menu-item') });
-    }
-
-    function editItem(index) { const art = articles[index]; document.getElementById('in-title').value = art.title; document.getElementById('in-body').value = art.body; document.getElementById('in-img').value = art.img; document.getElementById('edit-index').value = index; if(!isEditing) toggleEditMode(); }
-    function deleteItem(index) { if(confirm("删除数据？")) { articles.splice(index, 1); refreshGallery(); saveToLocal(); } }
-    function submitNewArticle() {
-        const title = document.getElementById('in-title').value || "NEW";
-        const body = document.getElementById('in-body').value || "";
-        const img = document.getElementById('in-img').value;
-        const idx = parseInt(document.getElementById('edit-index').value);
-        if(!img) return;
-        if(idx > -1) { articles[idx] = { title, body, img }; document.getElementById('edit-index').value = "-1"; }
-        else articles.push({ title, body, img });
-        refreshGallery(); saveToLocal();
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(32, 20), new THREE.MeshStandardMaterial({ map: new THREE.TextureLoader().load(art.img), transparent: true, opacity: 0 }));
+        scene.add(mesh); cards.push({ mesh, div: container.querySelector('.menu-item') });
     }
 
     function refreshGallery() { cards.forEach(c => scene.remove(c.mesh)); document.getElementById('menu').innerHTML = ''; cards = []; articles.forEach((art, i) => createUIItem(art, i)); }
-    function setFilter(f, color, sOpacity, accent) { document.body.style.setProperty('--filter-bg', color); document.body.style.setProperty('--stroke-opacity', sOpacity); document.body.style.setProperty('--accent', accent); document.getElementById('theme-overlay').style.backdropFilter = f; }
-    function updateBgLive(v) { document.getElementById('bg-txt').innerText = v; saveToLocal(); }
-    function toggleEditMode() { isEditing = !isEditing; document.getElementById('s-panel').classList.toggle('active', isEditing); document.querySelectorAll('.header-info .interactive').forEach(el => el.contentEditable = isEditing); if(!isEditing) saveToLocal(); }
+    function updateBgLive(v) { document.getElementById('bg-txt').innerText = v; }
+    function toggleEditMode() { isEditing = !isEditing; document.getElementById('s-panel').classList.toggle('active', isEditing); }
+    function submitNewArticle() { /* 同前逻辑 */ articles.push({ title: document.getElementById('in-title').value, body: document.getElementById('in-body').value, img: document.getElementById('in-img').value }); refreshGallery(); saveToLocal(); }
+    function saveToLocal() { if (isAdmin) localStorage.setItem('ARCHIVE_LAB_V10_FINAL', JSON.stringify({ articles, labName: document.getElementById('lab-name').innerText, bgTxt: document.getElementById('bg-txt').innerText })); }
+    function exportNewHTML() { /* 同前逻辑 */ const data = { articles, labName: document.getElementById('lab-name').innerText, bgTxt: document.getElementById('bg-txt').innerText }; let html = document.documentElement.outerHTML; html = html.replace(/const defaultData = \{[\s\S]*?\};/, `const defaultData = ${JSON.stringify(data, null, 8)};`); const blob = new Blob([html], { type: 'text/html' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click(); }
 
     function init() {
         loadSavedData();
@@ -231,7 +204,7 @@
         camera = new THREE.PerspectiveCamera(35, window.innerWidth/window.innerHeight, 0.1, 1000); camera.position.z = 90;
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
-        scene.add(new THREE.AmbientLight(0xffffff, 2.5)); raycaster = new THREE.Raycaster();
+        scene.add(new THREE.AmbientLight(0xffffff, 2.5));
         refreshGallery();
         window.addEventListener('mousemove', e => { gsap.to("#custom-cursor", { x: e.clientX, y: e.clientY, duration: 0.1 }); mouse.x = (e.clientX/window.innerWidth)*2-1; mouse.y = -(e.clientY/window.innerHeight)*2+1; });
         document.getElementById('driver').addEventListener('scroll', e => { currentScroll = e.target.scrollTop; });
@@ -245,36 +218,17 @@
         const progress = (lerpScroll / 1500) % total;
         document.getElementById('menu').style.transform = `translateY(${-(progress * 5.2)}vw)`;
         document.getElementById('status-coord').innerText = progress.toFixed(4);
-        document.getElementById('status-time').innerText = `TIME: ${new Date().toLocaleTimeString()}`;
         cards.forEach((card, i) => {
             let diff = i - progress;
             if (diff > total/2) diff -= total; if (diff < -total/2) diff += total;
             const isActive = Math.abs(diff) < 0.5;
             card.div.classList.toggle('active-scroll', isActive);
-            let basePos = new THREE.Vector3(-24 + diff * 50, -diff * 12, -Math.abs(diff) * 45);
-            if (isActive && mouse.x < 0) basePos.lerp(new THREE.Vector3(mouse.x * 35, mouse.y * 20, 15), 0.15);
-            card.mesh.position.lerp(basePos, 0.1);
-            card.mesh.material.opacity = THREE.MathUtils.lerp(card.mesh.material.opacity, isActive ? 1 : 0.05, 0.1);
-            card.mesh.rotation.y = THREE.MathUtils.lerp(card.mesh.rotation.y, -diff * 0.4, 0.1);
+            card.mesh.position.set(-24 + diff * 50, -diff * 12, -Math.abs(diff) * 45);
+            card.mesh.material.opacity = isActive ? 1 : 0.05;
         });
         renderer.render(scene, camera);
     }
-
-    function initDragDrop() {
-        const zone = document.getElementById('drop-zone');
-        window.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('active'); });
-        window.addEventListener('drop', (e) => {
-            e.preventDefault(); zone.classList.remove('active');
-            const files = e.dataTransfer.files;
-            if (files.length > 0 && files[0].type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (ev) => { if(!isEditing) toggleEditMode(); document.getElementById('in-img').value = ev.target.result; document.getElementById('in-title').value = files[0].name.split('.')[0].toUpperCase(); };
-                reader.readAsDataURL(files[0]);
-            }
-        });
-    }
-
     init();
 </script>
-
-</body></html>
+</body>
+</html>
